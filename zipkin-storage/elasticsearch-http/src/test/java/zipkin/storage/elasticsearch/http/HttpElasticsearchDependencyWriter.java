@@ -13,11 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.google.common.collect.ImmutableMap;
-import io.searchbox.core.Bulk;
-import io.searchbox.core.Index;
-import io.searchbox.indices.Flush;
-import java.io.IOException;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
@@ -26,22 +21,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class HttpElasticsearchDependencyWriter {
   public static void writeDependencyLinks(InternalElasticsearchClient genericClient,
-      List<DependencyLink> links, String index, String type) throws IOException {
-    checkArgument(genericClient instanceof HttpClient, "");
-    HttpClient client = (HttpClient) genericClient;
-    Bulk.Builder batch = new Bulk.Builder();
+      List<DependencyLink> links, String index, String type) throws Exception {
+    checkArgument(genericClient instanceof ElasticsearchHttpClient, "");
+    ElasticsearchHttpClient client = (ElasticsearchHttpClient) genericClient;
+    HttpBulkIndexer<DependencyLink> indexer =
+        new HttpBulkIndexer(client, type, client.dependencyLinkAdapter);
     for (DependencyLink link : links) {
-      batch.addAction(new Index.Builder(ImmutableMap.of(
-          "parent", link.parent,
-          "child", link.child,
-          "callCount", link.callCount
-      )).id(link.parent + "|" + link.child) // Unique constraint
-          .index(index)
-          .type(type)
-          .build());
+      indexer.add(index, link, link.parent + "|" + link.child); // Unique constraint
     }
-
-    client.client.execute(batch.build());
-    client.client.execute(new Flush.Builder().addIndex(index).build());
+    indexer.execute().get();
   }
 }

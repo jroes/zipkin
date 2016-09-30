@@ -11,26 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.moshi;
 
 import java.io.IOException;
-import zipkin.storage.SpanStoreTest;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.elasticsearch.http.HttpElasticsearchTestGraph;
+import okio.Buffer;
+import org.junit.Test;
+import zipkin.DependencyLink;
 
-public class ElasticsearchSpanStoreTest extends SpanStoreTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final ElasticsearchStorage storage;
+public final class DependencyLinkAdapterTest {
 
-  public ElasticsearchSpanStoreTest() {
-    this.storage = HttpElasticsearchTestGraph.INSTANCE.storage.get();
-  }
+  DependencyLinkAdapter adapter = new DependencyLinkAdapter();
 
-  @Override protected StorageComponent storage() {
-    return storage;
-  }
+  @Test
+  public void dependencyLinkRoundTrip() throws IOException {
+    DependencyLink link = DependencyLink.create("foo", "bar", 2);
 
-  @Override public void clear() throws IOException {
-    storage.clear();
+    Buffer bytes = new Buffer();
+    adapter.toJson(bytes, link);
+    assertThat(adapter.fromJson(bytes))
+        .isEqualTo(link);
   }
 }

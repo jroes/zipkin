@@ -52,11 +52,11 @@ public abstract class InternalElasticsearchClient implements Closeable {
   protected static final String SPAN = "span";
   protected static final String DEPENDENCY_LINK = "dependencylink";
 
-  protected interface Factory {
+  public interface Factory {
     InternalElasticsearchClient create(String allIndices);
   }
 
-  protected static abstract class Builder {
+  public static abstract class Builder {
     /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
     public abstract Builder cluster(String cluster);
 
